@@ -740,7 +740,7 @@ nsAutoCompleteController::HandleDelete(bool *_retval)
   return NS_OK;
 }
 
-nsresult 
+nsresult
 nsAutoCompleteController::GetResultAt(int32_t aIndex, nsIAutoCompleteResult** aResult,
                                       int32_t* aRowIndex)
 {
@@ -778,6 +778,17 @@ nsAutoCompleteController::GetCommentAt(int32_t aIndex, nsAString & _retval)
   NS_ENSURE_SUCCESS(rv, rv);
 
   return result->GetCommentAt(rowIndex, _retval);
+}
+
+NS_IMETHODIMP
+nsAutoCompleteController::GetGuidAt(int32_t aIndex, nsAString & _retval)
+{
+  int32_t rowIndex;
+  nsIAutoCompleteResult* result;
+  nsresult rv = GetResultAt(aIndex, &result, &rowIndex);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return result->GetGuidAt(rowIndex, _retval);
 }
 
 NS_IMETHODIMP

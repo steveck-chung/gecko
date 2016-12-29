@@ -20,12 +20,14 @@ struct AutoCompleteSimpleResultMatch
 {
   AutoCompleteSimpleResultMatch(const nsAString& aValue,
                                 const nsAString& aComment,
+                                const nsAString& aGuid,
                                 const nsAString& aImage,
                                 const nsAString& aStyle,
                                 const nsAString& aFinalCompleteValue,
                                 const nsAString& aLabel)
     : mValue(aValue)
     , mComment(aComment)
+    , mGuid(aGuid)
     , mImage(aImage)
     , mStyle(aStyle)
     , mFinalCompleteValue(aFinalCompleteValue)
@@ -35,6 +37,7 @@ struct AutoCompleteSimpleResultMatch
 
   nsString mValue;
   nsString mComment;
+  nsString mGuid;
   nsString mImage;
   nsString mStyle;
   nsString mFinalCompleteValue;
@@ -87,11 +90,13 @@ nsAutoCompleteSimpleResult::AppendResult(nsIAutoCompleteResult* aResult)
   rv = aResult->GetMatchCount(&matchCount);
   NS_ENSURE_SUCCESS(rv, rv);
   for (size_t i = 0; i < matchCount; ++i) {
-    nsAutoString value, comment, image, style, finalCompleteValue, label;
+    nsAutoString value, comment, guid, image, style, finalCompleteValue, label;
 
     rv = aResult->GetValueAt(i, value);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = aResult->GetCommentAt(i, comment);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = aResult->GetGuidAt(i, guid);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = aResult->GetImageAt(i, image);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -102,7 +107,7 @@ nsAutoCompleteSimpleResult::AppendResult(nsIAutoCompleteResult* aResult)
     rv = aResult->GetLabelAt(i, label);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = AppendMatch(value, comment, image, style, finalCompleteValue, label);
+    rv = AppendMatch(value, comment, guid, image, style, finalCompleteValue, label);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -170,6 +175,7 @@ NS_IMETHODIMP
 nsAutoCompleteSimpleResult::InsertMatchAt(int32_t aIndex,
                                           const nsAString& aValue,
                                           const nsAString& aComment,
+                                          const nsAString& aGuid,
                                           const nsAString& aImage,
                                           const nsAString& aStyle,
                                           const nsAString& aFinalCompleteValue,
@@ -177,7 +183,7 @@ nsAutoCompleteSimpleResult::InsertMatchAt(int32_t aIndex,
 {
   CHECK_MATCH_INDEX(aIndex, true);
 
-  AutoCompleteSimpleResultMatch match(aValue, aComment, aImage, aStyle, aFinalCompleteValue, aLabel);
+  AutoCompleteSimpleResultMatch match(aValue, aComment, aGuid, aImage, aStyle, aFinalCompleteValue, aLabel);
 
   if (!mMatches.InsertElementAt(aIndex, match)) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -189,12 +195,13 @@ nsAutoCompleteSimpleResult::InsertMatchAt(int32_t aIndex,
 NS_IMETHODIMP
 nsAutoCompleteSimpleResult::AppendMatch(const nsAString& aValue,
                                         const nsAString& aComment,
+                                        const nsAString& aGuid,
                                         const nsAString& aImage,
                                         const nsAString& aStyle,
                                         const nsAString& aFinalCompleteValue,
                                         const nsAString& aLabel)
 {
-  return InsertMatchAt(mMatches.Length(), aValue, aComment, aImage, aStyle,
+  return InsertMatchAt(mMatches.Length(), aValue, aComment, aGuid, aImage, aStyle,
                        aFinalCompleteValue, aLabel);
 }
 
@@ -229,6 +236,14 @@ nsAutoCompleteSimpleResult::GetCommentAt(int32_t aIndex, nsAString& _retval)
 {
   CHECK_MATCH_INDEX(aIndex, false);
   _retval = mMatches[aIndex].mComment;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAutoCompleteSimpleResult::GetGuidAt(int32_t aIndex, nsAString& _retval)
+{
+  CHECK_MATCH_INDEX(aIndex, false);
+  _retval = mMatches[aIndex].mGuid;
   return NS_OK;
 }
 

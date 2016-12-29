@@ -140,6 +140,11 @@ interface nsIAutoCompleteController : nsISupports
   AString getCommentAt(in long index);
 
   /*
+   * Get the guid of the result at a given index in the last completed search
+   */
+  AString getGuidAt(in long index);
+
+  /*
    * Get the style hint for the result at a given index in the last completed search
    */
   AString getStyleAt(in long index);

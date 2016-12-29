@@ -46,6 +46,10 @@ var AutoCompleteResultView = {
     return this.results[index].label;
   },
 
+  getGuidAt(index) {
+    return this.results[index].guid;
+  },
+
   getStyleAt(index) {
     return this.results[index].style;
   },

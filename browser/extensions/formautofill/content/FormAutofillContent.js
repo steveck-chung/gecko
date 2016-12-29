@@ -230,10 +230,11 @@ AutofillProfileAutoCompleteSearch.prototype = {
     let labels = ["Mary", "John"];
     let values = ["Mary S.", "John S."];
     let comments = ["123 Sesame Street.", "331 E. Evelyn Avenue"];
+    let guids = ["test-guid-1", "test-guid-2"];
     let result = new FormAutoCompleteResult(searchString,
                                             Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
                                             0, "", values, labels,
-                                            comments);
+                                            comments, guids);
 
     listener.onSearchResult(this, result);
   },

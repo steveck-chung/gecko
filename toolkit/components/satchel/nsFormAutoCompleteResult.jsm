@@ -17,6 +17,7 @@ this.FormAutoCompleteResult =
                                  values,
                                  labels,
                                  comments,
+                                 guids,
                                  prevResult) {
   this.searchString = searchString;
   this._searchResult = searchResult;
@@ -25,6 +26,7 @@ this.FormAutoCompleteResult =
   this._values = values;
   this._labels = labels;
   this._comments = comments;
+  this._guids = guids;
   this._formHistResult = prevResult;
 
   if (prevResult) {
@@ -124,6 +126,16 @@ FormAutoCompleteResult.prototype = {
   },
 
   /**
+   * Retrieves a guid (metadata instance)
+   * @param  index    the index of the guid requested
+   * @return          the guid at the specified index
+   */
+  getGuidAt: function(index) {
+    this._checkIndexBounds(index);
+    return this._guids[index];
+  },
+
+  /**
    * Retrieves a style hint specific to a particular index.
    * @param  index    the index of the style hint requested
    * @return          the style hint at the specified index
@@ -180,6 +192,7 @@ FormAutoCompleteResult.prototype = {
     this._values.splice(index, 1);
     this._labels.splice(index, 1);
     this._comments.splice(index, 1);
+    this._guids.splice(index, 1);
   },
 
   // nsISupports

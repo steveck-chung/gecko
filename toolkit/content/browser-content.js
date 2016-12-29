@@ -1597,6 +1597,7 @@ let AutoCompletePopup = {
       result.value = controller.getValueAt(i);
       result.label = controller.getLabelAt(i);
       result.comment = controller.getCommentAt(i);
+      result.guid = controller.getGuidAt(i);
       result.style = controller.getStyleAt(i);
       result.image = controller.getImageAt(i);
       results.push(result);
