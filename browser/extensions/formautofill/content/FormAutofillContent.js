@@ -230,17 +230,16 @@ AutofillProfileAutoCompleteSearch.prototype = {
    */
   startSearch(searchString, searchParam, previousResult, listener) {
     this.forceStop = false;
-    let inputInfo;
+    let info = this.getInputInfo();
 
-    this.getInputInfo().then((info) => {
-      inputInfo = info;
-      return this.getProfiles({info, searchString});
-    }).then((profiles) => {
+    this.getProfiles({info, searchString}).then((profiles) => {
       if (this.forceStop) {
         return;
       }
 
-      let result = new ProfileAutoCompleteResult(searchString, inputInfo, profiles, {});
+      // TODO: Set formInfo for ProfileAutoCompleteResult
+      // let formInfo = this.getFormInfo();
+      let result = new ProfileAutoCompleteResult(searchString, info, profiles, {});
 
       listener.onSearchResult(this, result);
     });
@@ -279,19 +278,25 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
   /**
-   * Get the input's information from FormAutofill heuristics.
+   * Get the input's information from FormAutofillContent's cache.
    *
-   * @returns {Promise}
-   *          Promise that resolves when profiles returned from heuristics getInfo API.
+   * @returns {Object}
+   *          Target input's information that cached in FormAutofillContent.
    */
   getInputInfo() {
-    let input = formFillController.getFocusedInput();
+    // TODO: Maybe we'll need to wait for cache ready if detail is empty.
+    return FormAutofillContent.getInputDetail(formFillController.getFocusedInput());
+  },
 
-    // It could be synchronous API since FormAutofillHeuristics.getInfo is still
-    // not in parent process yet.
-    return new Promise((resolve) => {
-      resolve(FormAutofillHeuristics.getInfo(input));
-    });
+  /**
+   * Get the form's information from FormAutofillContent's cache.
+   *
+   * @returns {Array<Object>}
+   *          Array of the inputs' information for the target form.
+   */
+  getFormInfo() {
+    // TODO: Maybe we'll need to wait for cache ready if details is empty.
+    return FormAutofillContent.getFormDetails(formFillController.getFocusedInput());
   },
 };
 
@@ -350,8 +355,37 @@ var FormAutofillContent = {
     }
   },
 
+  getInputDetail(element) {
+    for (let i in this._formsDetails) {
+      for (let j in this._formsDetails[i]) {
+        let detail = this._formsDetails[i][j];
+        if (element == detail.element) {
+          return this._infoClone(detail);
+        }
+      }
+    };
+    return null;
+  },
+
+  getFormDetails(element) {
+    for (let i in this._formsDetails) {
+      let formDetails = this._formsDetails[i];
+      if (formDetails.some((detail) => detail.element == element)) {
+        return formDetails.map((detail) => this._infoClone(detail));
+      }
+    };
+    return null;
+  },
+
+  _infoClone(detail) {
+    let info = Object.assign({}, detail);
+    delete info.element;
+    return info;
+  },
+
   _identifyAutofillFields(doc) {
     let forms = [];
+    this._formsDetails = [];
 
     // Collects root forms from inputs.
     for (let field of doc.getElementsByTagName("input")) {
@@ -370,6 +404,7 @@ var FormAutofillContent = {
         return;
       }
 
+      this._formsDetails.push(formHandler.fieldDetails);
       formHandler.fieldDetails.forEach(
         detail => this._markAsAutofillField(detail.element));
     });
