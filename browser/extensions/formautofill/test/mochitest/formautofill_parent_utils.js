@@ -58,6 +58,15 @@ addMessageListener("FormAutofillTest:UpdateAddress", (msg) => {
   ParentUtils.updateAddress("update", "FormAutofill:SaveAddress", msg, "FormAutofillTest:AddressUpdated");
 });
 
+addMessageListener("FormAutofillTest:GetAddresses", () => {
+  Services.cpmm.addMessageListener("FormAutofill:Addresses", function getResult(result) {
+    Services.cpmm.removeMessageListener("FormAutofill:Addresses", getResult);
+    sendAsyncMessage("FormAutofillTest:Addresses", result.data);
+  });
+
+  Services.cpmm.sendAsyncMessage("FormAutofill:GetAddresses", {});
+});
+
 addMessageListener("cleanup", () => {
   ParentUtils.cleanup();
 });

@@ -6,10 +6,44 @@
 
 let formFillChromeScript;
 
+const VALID_ADDRESS_FIELDS = [
+  "given-name",
+  "additional-name",
+  "family-name",
+  "organization",
+  "street-address",
+  "address-level2",
+  "address-level1",
+  "postal-code",
+  "country",
+  "tel",
+  "email",
+];
+
 function setInput(selector, value) {
   let input = document.querySelector("input" + selector);
   input.value = value;
   input.focus();
+}
+
+function clickOnElement(selector) {
+  let element = document.querySelector(selector);
+
+  if (!element) {
+    throw new Error("Can not find the element");
+  }
+
+  element.click();
+}
+
+function onAddressChanged(type) {
+  return new Promise(resolve => {
+    formFillChromeScript.addMessageListener("formautofill-storage-changed", function onChanged(data) {
+      formFillChromeScript.removeMessageListener("formautofill-storage-changed", onChanged);
+      is(data.data, type, "Receive add storage changed event");
+      resolve();
+    });
+  });
 }
 
 function checkMenuEntries(expectedValues) {
@@ -52,6 +86,37 @@ function updateAddress(guid, address) {
       resolve();
     });
   });
+}
+
+function getAddresses() {
+  return new Promise(resolve => {
+    formFillChromeScript.sendAsyncMessage("FormAutofillTest:GetAddresses");
+    formFillChromeScript.addMessageListener("FormAutofillTest:Addresses", function onUpdated(data) {
+      formFillChromeScript.removeMessageListener("FormAutofillTest:Addresses", onUpdated);
+
+      resolve(data);
+    });
+  });
+}
+
+function areAddressesMatching(addressA, addressB) {
+  for (let field of VALID_ADDRESS_FIELDS) {
+    if (addressA[field] !== addressB[field]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function checkAddresses(expectedAddresses) {
+  return getAddresses().then((addresses => {
+    is(addresses.length, expectedAddresses.length, "Number of address are matching");
+    for (let address of addresses) {
+      for (let expectedAddress of expectedAddresses) {
+        ok(areAddressesMatching(address, expectedAddress), "2 Addresses' content are matching");
+      }
+    }
+  }));
 }
 
 function formAutoFillCommonSetup() {
