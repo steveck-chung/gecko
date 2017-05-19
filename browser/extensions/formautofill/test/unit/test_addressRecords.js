@@ -32,6 +32,13 @@ const TEST_ADDRESS_3 = {
   "postal-code": "12345",
 };
 
+const TEST_ADDRESS_4 = {
+  "given-name": "Timothy",
+  "additional-name": "John",
+  "family-name": "Berners-Lee",
+  organization: "World Wide Web Consortium",
+};
+
 const TEST_ADDRESS_WITH_INVALID_FIELD = {
   "street-address": "Another Address",
   invalidField: "INVALID",
@@ -183,6 +190,13 @@ add_task(async function test_add() {
 
   Assert.throws(() => profileStorage.addresses.add(TEST_ADDRESS_WITH_INVALID_FIELD),
     /"invalidField" is not a valid field\./);
+
+  // Saving a mergeable address will not add a new address.
+  let timeLastModified = addresses[0].timeLastModified;
+  profileStorage.addresses.add(TEST_ADDRESS_4);
+  addresses = profileStorage.addresses.getAll();
+  do_check_eq(addresses.length, 2);
+  do_check_neq(addresses[0].timeLastModified, timeLastModified);
 });
 
 add_task(async function test_update() {
@@ -283,4 +297,42 @@ add_task(async function test_remove() {
   do_check_eq(addresses.length, 1);
 
   Assert.throws(() => profileStorage.addresses.get(guid), /No matching record\./);
+});
+
+add_task(async function test_merge() {
+  let path = getTempFile(TEST_STORE_FILE_NAME).path;
+  await prepareTestRecords(path);
+
+  let profileStorage = new ProfileStorage(path);
+  await profileStorage.initialize();
+
+  let addresses = profileStorage.addresses.getAll();
+
+  do_check_eq(addresses.length, 2);
+
+  // Merge a superset
+  let superset = profileStorage.addresses._clone(TEST_ADDRESS_2);
+  superset.tel = "123456";
+  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, superset), true);
+  do_check_eq(profileStorage.addresses.getAll()[1].tel, "123456");
+
+  // Merge a subset
+  let subset = profileStorage.addresses._clone(TEST_ADDRESS_1);
+  delete subset.tel;
+  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[0].guid, subset), true);
+  do_check_eq(profileStorage.addresses.getAll()[0].tel, TEST_ADDRESS_1.tel);
+
+  // Merge an address with partial overlaps
+  let overlap = profileStorage.addresses._clone(TEST_ADDRESS_2);
+  delete overlap.country;
+  overlap["postal-code"] = "12345";
+  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, overlap), true);
+  do_check_eq(profileStorage.addresses.getAll()[1].country, TEST_ADDRESS_2.country);
+  do_check_eq(profileStorage.addresses.getAll()[1]["postal-code"], "12345");
+
+  // Unable to merge because of conflict
+  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, TEST_ADDRESS_3), false);
+
+  // Unable to merge because no overlap
+  do_check_eq(profileStorage.addresses.mergeIfPossible(addresses[1].guid, TEST_ADDRESS_4), false);
 });

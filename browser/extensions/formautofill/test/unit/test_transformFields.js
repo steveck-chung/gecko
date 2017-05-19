@@ -111,12 +111,12 @@ const ADDRESS_NORMALIZE_TESTCASES = [
       "name": "John Doe",
       "given-name": "Timothy",
       "additional-name": "John",
-      "family-name": "Berners-Lee",
+      "family-name": "Berners",
     },
     expectedResult: {
       "given-name": "Timothy",
       "additional-name": "John",
-      "family-name": "Berners-Lee",
+      "family-name": "Berners",
     },
   },
   {

@@ -40,14 +40,14 @@ const TEST_CREDIT_CARD_WITH_INVALID_FIELD = {
 };
 
 const TEST_CREDIT_CARD_WITH_INVALID_EXPIRY_DATE = {
-  "cc-name": "John Doe",
+  "cc-name": "John Doe Sr.",
   "cc-number": "1111222233334444",
   "cc-exp-month": 13,
   "cc-exp-year": -3,
 };
 
 const TEST_CREDIT_CARD_WITH_SPACES_BETWEEN_DIGITS = {
-  "cc-name": "John Doe",
+  "cc-name": "John Doe Jr.",
   "cc-number": "1111 2222 3333 4444",
 };
 

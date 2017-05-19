@@ -171,8 +171,12 @@ class AutofillRecords {
    *        The new record for saving.
    */
   add(record) {
-    this.log.debug("add:", record);
+    // Try to merge to existing record before adding new record
+    if (this._mergeToStorage(record)) {
+      return;
+    }
 
+    this.log.debug("add:", record);
     let recordToSave = this._clone(record);
     this._normalizeRecord(recordToSave);
 
@@ -268,6 +272,57 @@ class AutofillRecords {
   }
 
   /**
+   * Merge new record into the specified record if mergeable.
+   *
+   * @param  {string} guid
+   *         Indicates which record to merge.
+   * @param  {Object} record
+   *         The new record used to merge into the old one.
+   * @returns {boolean}
+   *          Return true if record is merged into target with specific guid or false if not.
+   */
+  mergeIfPossible(guid, record) {
+    this.log.debug("merge:", guid, record);
+
+    let recordFound = this._findByGUID(guid);
+    if (!recordFound) {
+      throw new Error("No matching record.");
+    }
+
+    let recordToMerge = this._clone(record);
+    this._normalizeRecord(recordToMerge);
+    let hasMatchingField = false;
+
+    for (let field of this.VALID_FIELDS) {
+      if (recordToMerge[field] !== undefined && recordFound[field] !== undefined) {
+        if (recordToMerge[field] != recordFound[field]) {
+          this.log.debug("Conflicts: field", field, "has different value.");
+          return false;
+        }
+        hasMatchingField = true;
+      }
+    }
+
+    // We merge the record only when at least one field has the same value.
+    if (!hasMatchingField) {
+      this.log.debug("Unable to merge because there's no field has same value");
+      return false;
+    }
+
+    for (let field in recordToMerge) {
+      if (this.VALID_FIELDS.includes(field)) {
+        recordFound[field] = recordToMerge[field];
+      }
+    }
+
+    recordFound.timeLastModified = Date.now();
+
+    this._store.saveSoon();
+    Services.obs.notifyObservers(null, "formautofill-storage-changed", "merge");
+    return true;
+  }
+
+  /**
    * Returns the record with the specified GUID.
    *
    * @param   {string} guid
@@ -360,6 +415,23 @@ class AutofillRecords {
         throw new Error(`"${key}" contains invalid data type.`);
       }
     }
+  }
+
+  /**
+   * Merge the record if storage has a mergeable record.
+   * @param {Object} targetRecord
+   *        The record for merge.
+   * @returns {boolean}
+   *          Return true if the target record is mergeable or false if not.
+   */
+  _mergeToStorage(targetRecord) {
+    for (let record of this._store.data[this._collectionName]) {
+      if (this.mergeIfPossible(record.guid, targetRecord)) {
+        return true;
+      }
+    }
+    this.log.debug("Unable to merge into storage");
+    return false;
   }
 
   // An interface to be inherited.
